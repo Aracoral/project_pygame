@@ -1,0 +1,137 @@
+import pygame, random
+
+
+class Board:
+    # создаем доску для крестиков-ноликов))
+    def __init__(self, width, height):
+        # первоначально, пользовать играет за крестики(крестики - 1, нолики - 2)
+        self.users = 1
+        # превоначально, у алгоритма нолики
+        self.progarm = 2
+        self.width = width
+        self.height = height
+        self.colors = ["blue", "red"]
+        self.board = [[0] * width for _ in range(height)]
+        self.left = 10
+        self.top = 10
+        self.cell_size = 50
+        self.prov = 0
+        self.progress = 0
+        self.prof_to_win = 0
+
+    def set_view(self, left, top, cell_size):
+        self.left = left
+        self.top = top
+        self.cell_size = cell_size
+
+    # часть, связанная с показом самик элементов
+    def render(self, screen):
+        for i in range(self.width):
+            for j in range(self.height):
+                pygame.draw.rect(screen, "white", (self.top + i * self.cell_size, self.left + j * self.cell_size,
+                                                   self.cell_size, self.cell_size), 1)
+                if self.board[j][i] == 1:
+                    pygame.draw.line(screen, "blue", (self.top + i * self.cell_size + 4, self.left + j * self.cell_size + 4),
+                                     (self.top + i * self.cell_size + self.cell_size - 4, self.left + j * self.cell_size + self.cell_size - 4), width=2)
+                    pygame.draw.line(screen, "blue", (self.top + i * self.cell_size + self.cell_size - 4, self.left + j * self.cell_size + 4),
+                                     (self.top + i * self.cell_size + 4, self.left + j * self.cell_size + self.cell_size - 4), width=2)
+                if self.board[j][i] == 2:
+                    pygame.draw.circle(screen, "red", ((self.top + i * self.cell_size + self.cell_size // 2), (self.left + j * self.cell_size + self.cell_size // 2)),
+                                       self.cell_size / 2 - 2, width=2)
+
+    def get_cell(self, mouse_pos):
+        x, y = mouse_pos[0], mouse_pos[1]
+        x_real, y_real = (x - self.left) // self.cell_size, (y - self.top) // self.cell_size
+        if 0 <= x_real and x_real <= self.width - 1 and 0 <= y_real and y_real <= self.height - 1:
+            return (x_real, y_real)
+        else:
+            return None
+
+    def on_click(self, cell_coords):
+        y, x = cell_coords[0], cell_coords[1]
+        self.progress += 1
+        # ход пользователя
+        if self.board[x][y] == 0:
+            self.prov = self.users
+            self.board[x][y] = (self.board[x][y] + self.prov)
+        # определяем, куда алгоритм походит
+        if self.progress == 1 or self.progress == 2:
+            while self.board[x][y] != 0:
+                x, y = random.randint(0, 2), random.randint(0, 2)
+        else:
+            # чисто ради последующей проверки:)
+            prov = 0
+            # проверка на выигрыш / предвыигрышной ситуации
+            for i in range(2):
+                users_prov = 0
+                for j in range(2):
+                    if self.board[i][j] == self.users:
+                        users_prov += 1
+                if users_prov == 2:
+                    x, y, = i, j
+                    prov = 1
+                    break
+                if users_prov == 3:
+                    self.prof_to_win = 1
+                    prov = 1
+                    break
+
+            if prov == 0:
+                for j in range(2):
+                    users_prov = 0
+                    for i in range(2):
+                        if self.board[i][j] == self.users:
+                            users_prov += 1
+                    if users_prov == 2:
+                        x, y, = i, j
+                        prov = 1
+                        break
+                    if users_prov == 3:
+                        self.prof_to_win = 1
+                        prov = 1
+                        break
+
+            if prov == 0:
+                users_prov = 0
+                if self.board[1][1] == self.users:
+                    users_prov += 1
+                if self.board[0][0] == self.users:
+                    users_prov += 1
+                if self.board[2][2] == self.users:
+                    users_prov += 1
+                if users_prov == 2:
+                    
+                if self.board[0][2] == self.users:
+                    users_prov += 1
+                if self.board[2][0] == self.users:
+                    users_prov += 1
+
+
+
+        self.board[x][y] = self.progarm
+
+
+    def get_click(self, mouse_pos):
+        cell = self.get_cell(mouse_pos)
+        if cell:
+            self.on_click(cell)
+
+
+if __name__ == '__main__':
+    pygame.init()
+    size = width, height = 500, 300
+    screen = pygame.display.set_mode(size)
+    board = Board(3, 3)
+    running = True
+
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                board.get_click(event.pos)
+        screen.fill("black")
+        board.render(screen)
+
+        pygame.display.flip()
+    pygame.quit()
